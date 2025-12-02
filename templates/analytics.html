@@ -1,23 +1,30 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <title>Analytics — AI Revenue Dashboard</title>
 
   <!-- Fonts & Bootstrap -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@300;400;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <meta name="viewport" content="width=device-width,initial-scale=1">
 </head>
+
 <body class="dark-mode">
+  <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+
+
   <canvas id="particle-canvas" aria-hidden="true"></canvas>
 
   <aside class="sidebar">
-     <div class="logo glass-logo">
-    <h2 class="logo-text">Insight</h2>
-</div>
+
+    <div class="logo glass-logo">
+      <h2 class="logo-text">Insight</h2>
+    </div>
 
     <nav>
       <ul class="menu">
@@ -62,56 +69,60 @@
             <h6>Revenue by Season</h6>
             <div id="seasonBar" class="chart-inner" style="height:220px"></div>
           </div>
-           <!-- Customer Demographics -->
-    <div class="chart-card glass">
-        <h6>Revenue by Customer Demographics</h6>
-        <div id="demoBar" class="chart-inner" style="height:220px;"></div>
-    </div>
+          <!-- Customer Demographics -->
+          <div class="chart-card glass">
+            <h6>Revenue by Customer Demographics</h6>
+            <div id="demoBar" class="chart-inner" style="height:220px;"></div>
+          </div>
 
-    <!-- Cost vs Revenue -->
-    <div class="chart-card glass">
-        <h6>Revenue vs Costs</h6>
-        <div id="revCost" class="chart-inner" style="height:220px;"></div>
-    </div>
-             <!-- Recommendations -->
-    <div style="margin-top:18px;">
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:22px;">
+          <!-- Cost vs Revenue -->
+          <div class="chart-card glass">
+            <h6>Revenue vs Costs</h6>
+            <div id="revCost" class="chart-inner" style="height:220px;"></div>
+          </div>
+          <!-- Recommendations -->
+          <div style="margin-top:18px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:22px;">
 
-   
 
-</div>
 
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:22px;">
+            </div>
 
-  
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:22px;">
 
-    <!-- Lead Time Impact -->
-   
 
-</div>
 
-      <div id="insightRecommendations" class="quick-insight small-muted"></div>
-    </div>
+              <!-- Lead Time Impact -->
+
+
+            </div>
+
+            <div id="insightRecommendations" class="quick-insight small-muted"></div>
+          </div>
         </div>
       </div>
 
-     <aside class="insight-card glass" style="padding:18px;">
+      <aside class="insight-card glass" style="padding:18px;">
 
-  <h5 style="margin-top:0;">Top Insights (Actionable)</h5>
+        <h5 style="margin-top:0;">Top Insights (Actionable)</h5>
 
-  <!-- grid of PowerBI-like insight cards -->
-  <div id="insightCards" class="insight-panel"> 
+        <!-- grid of PowerBI-like insight cards -->
+        <div id="insightCards" class="insight-panel">
 
-    <!-- Insight Cards (auto-filled by JS) -->
-    <div id="insightGrid" class="insight-cards"></div>
+          <!-- Insight Cards (auto-filled by JS) -->
+          <div id="insightGrid" class="insight-cards"></div>
 
- 
 
-  </div>
-</aside>
+
+        </div>
+      </aside>
 
     </div>
   </main>
+
+
+
+
 
   <!-- Pass data from Flask; ensure endpoint sends df_json, numeric_cols, categorical_cols, target -->
   <script>
@@ -121,6 +132,31 @@
     const target = "{{ target if target is defined else 'Correct_Revenue' }}";
   </script>
 
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const sidebar = document.querySelector(".sidebar");
+      const toggle = document.getElementById("sidebarToggle");
+      const closeBtn = document.getElementById("closeSidebar");
+
+      toggle?.addEventListener("click", () => {
+        sidebar.classList.toggle("open");
+        toggle.textContent = sidebar.classList.contains("open") ? "✕" : "☰";
+      });
+
+      closeBtn?.addEventListener("click", () => {
+        sidebar.classList.remove("open");
+        toggle.textContent = "☰";
+      });
+    });
+  </script>
+
 </body>
+
+</html>
+
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
 </html>

@@ -47,22 +47,22 @@
   const toggles = Array.from(document.querySelectorAll('#themeToggle'));
   if (!toggles.length) return;
   const saved = localStorage.getItem('theme') || 'dark';
-  document.body.classList.remove('light-mode','dark-mode');
+  document.body.classList.remove('light-mode', 'dark-mode');
   document.body.classList.add(saved + '-mode');
   toggles.forEach(t => t.checked = saved === 'dark');
 
   toggles.forEach(toggle => toggle.addEventListener('change', () => {
     const mode = toggle.checked ? 'dark' : 'light';
-    document.body.classList.remove('light-mode','dark-mode');
+    document.body.classList.remove('light-mode', 'dark-mode');
     document.body.classList.add(mode + '-mode');
     localStorage.setItem('theme', mode);
   }));
 })();
 
 /* ---------------- UTILS ---------------- */
-function toNum(v){ if (v===null||v===undefined||v==='') return NaN; const n = Number(v); return isNaN(n)?NaN:n; }
-function sum(a){ return a.reduce((s,x)=>s+(isNaN(x)?0:x),0); }
-function avg(a){ return a.length?sum(a)/a.length:0; }
+function toNum(v) { if (v === null || v === undefined || v === '') return NaN; const n = Number(v); return isNaN(n) ? NaN : n; }
+function sum(a) { return a.reduce((s, x) => s + (isNaN(x) ? 0 : x), 0); }
+function avg(a) { return a.length ? sum(a) / a.length : 0; }
 
 /* ---------------- KPI ICONS + RENDER ---------------- */
 const KPI_ICONS = {
@@ -72,41 +72,41 @@ const KPI_ICONS = {
   "Avg Lead Time": `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.2"/></svg>`,
   "Avg Shipping Time": `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 7h13l4 4v7a1 1 0 01-1 1H6a1 1 0 01-1-1V7z" stroke="currentColor" stroke-width="1.2"/><circle cx="7.5" cy="18.5" r="1.5" stroke="currentColor" stroke-width="1.2"/></svg>`,
   "Avg Defect Rate": `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l2 7H22" stroke="currentColor" stroke-width="1.5"/><path d="M2 13h20" stroke="currentColor" stroke-width="1.2"/></svg>`,
-  };
+};
 
-function computeKPIs(dfLocal, targetCol){
+function computeKPIs(dfLocal, targetCol) {
   if (!dfLocal || !dfLocal.length) return {};
-  const revenue = dfLocal.map(r=>toNum(r[targetCol])).filter(x=>!isNaN(x));
-  const totalRevenue = sum(revenue), average = revenue.length?avg(revenue):0;
+  const revenue = dfLocal.map(r => toNum(r[targetCol])).filter(x => !isNaN(x));
+  const totalRevenue = sum(revenue), average = revenue.length ? avg(revenue) : 0;
 
   const first = dfLocal[0];
   const find = (candidates) => candidates.find(c => first && (c in first));
-  const orderCol = find(['Number of products sold','Order quantities','Order_quantities']);
-  const leadCol = find(['Lead times','Manufacturing lead time','Lead_time']);
-  const shipCol = find(['Shipping times','Shipping_time','Shipping_times']);
-  const defectCol = find(['Defect rates','Defect_rate','Defect_Rate']);
+  const orderCol = find(['Number of products sold', 'Order quantities', 'Order_quantities']);
+  const leadCol = find(['Lead times', 'Manufacturing lead time', 'Lead_time']);
+  const shipCol = find(['Shipping times', 'Shipping_time', 'Shipping_times']);
+  const defectCol = find(['Defect rates', 'Defect_rate', 'Defect_Rate']);
   // const manufCol = find(['Manufacturing costs','Manufacturing_Costs','Manufacturing cost']);
 
-  const avgOrder = orderCol ? avg(dfLocal.map(r => toNum(r[orderCol])).filter(x=>!isNaN(x))) : null;
-  const avgLead = leadCol ? avg(dfLocal.map(r=>toNum(r[leadCol])).filter(x=>!isNaN(x))) : null;
-  const avgShip = shipCol ? avg(dfLocal.map(r=>toNum(r[shipCol])).filter(x=>!isNaN(x))) : null;
-  const avgDef = defectCol ? avg(dfLocal.map(r=>toNum(r[defectCol])).filter(x=>!isNaN(x))) : null;
+  const avgOrder = orderCol ? avg(dfLocal.map(r => toNum(r[orderCol])).filter(x => !isNaN(x))) : null;
+  const avgLead = leadCol ? avg(dfLocal.map(r => toNum(r[leadCol])).filter(x => !isNaN(x))) : null;
+  const avgShip = shipCol ? avg(dfLocal.map(r => toNum(r[shipCol])).filter(x => !isNaN(x))) : null;
+  const avgDef = defectCol ? avg(dfLocal.map(r => toNum(r[defectCol])).filter(x => !isNaN(x))) : null;
   // const avgManuf = manufCol ? avg(dfLocal.map(r=>toNum(r[manufCol])).filter(x=>!isNaN(x))) : null;
 
-  return { totalRevenue, average, avgOrder, avgLead, avgShip, avgDef};
+  return { totalRevenue, average, avgOrder, avgLead, avgShip, avgDef };
 }
 
-function renderKPIsToDOM(dfLocal, targetCol){
+function renderKPIsToDOM(dfLocal, targetCol) {
   const k = computeKPIs(dfLocal, targetCol);
   const container = document.getElementById('kpiRow');
   if (!container) return;
   const items = [
-    { label: 'Total Revenue', value: k.totalRevenue?`₹ ${Number(k.totalRevenue).toLocaleString()}`:'N/A' },
-    { label: 'Average Revenue', value: k.average?`₹ ${k.average.toFixed(2)}`:'N/A' },
-    { label: 'Avg Order Quantity', value: k.avgOrder? k.avgOrder.toFixed(2) : 'N/A' },
-    { label: 'Avg Lead Time', value: k.avgLead? `${k.avgLead.toFixed(2)} days`: 'N/A' },
-    { label: 'Avg Shipping Time', value: k.avgShip? `${k.avgShip.toFixed(2)} days`: 'N/A' },
-    { label: 'Avg Defect Rate', value: k.avgDef? (k.avgDef.toFixed(2) + ' %') : 'N/A' },
+    { label: 'Total Revenue', value: k.totalRevenue ? `₹ ${Number(k.totalRevenue).toLocaleString()}` : 'N/A' },
+    { label: 'Average Revenue', value: k.average ? `₹ ${k.average.toFixed(2)}` : 'N/A' },
+    { label: 'Avg Order Quantity', value: k.avgOrder ? k.avgOrder.toFixed(2) : 'N/A' },
+    { label: 'Avg Lead Time', value: k.avgLead ? `${k.avgLead.toFixed(2)} days` : 'N/A' },
+    { label: 'Avg Shipping Time', value: k.avgShip ? `${k.avgShip.toFixed(2)} days` : 'N/A' },
+    { label: 'Avg Defect Rate', value: k.avgDef ? (k.avgDef.toFixed(2) + ' %') : 'N/A' },
     // { label: 'Avg Manufacturing Cost', value: k.avgManuf? `₹ ${k.avgManuf.toFixed(2)}` : 'N/A' }
   ];
 
@@ -124,41 +124,41 @@ function renderKPIsToDOM(dfLocal, targetCol){
 /* ---------------- Analytics small renderers (Trend/Pie/Bar/Correlations) -----------
    These functions are used on analytics.html and eda.html pages if Plotly & df are provided.
 */
-function renderTrendChart(dfLocal, targetCol, mountId='trendChart'){
+function renderTrendChart(dfLocal, targetCol, mountId = 'trendChart') {
   if (!window.Plotly) return;
   if (!dfLocal || !dfLocal.length) return;
   const timeCol = ('Month' in dfLocal[0]) ? 'Month' : (('Date' in dfLocal[0]) ? 'Date' : null);
-  let x=[], y=[];
-  if (timeCol){
+  let x = [], y = [];
+  if (timeCol) {
     const agg = {};
-    dfLocal.forEach(r => { const k = r[timeCol] ?? 'Unknown'; const v = toNum(r[targetCol]); if (!isNaN(v)) agg[k] = (agg[k]||0) + v; });
+    dfLocal.forEach(r => { const k = r[timeCol] ?? 'Unknown'; const v = toNum(r[targetCol]); if (!isNaN(v)) agg[k] = (agg[k] || 0) + v; });
     const keys = Object.keys(agg);
     const numeric = keys.every(k => !isNaN(Number(k)));
-    const sorted = numeric ? keys.sort((a,b)=>Number(a)-Number(b)) : keys;
+    const sorted = numeric ? keys.sort((a, b) => Number(a) - Number(b)) : keys;
     x = sorted; y = sorted.map(k => agg[k]);
   } else {
-    x = dfLocal.map((_,i)=>i+1); y = dfLocal.map(r => toNum(r[targetCol]) || 0);
+    x = dfLocal.map((_, i) => i + 1); y = dfLocal.map(r => toNum(r[targetCol]) || 0);
   }
-  const trace = { x, y, type:'scatter', mode:'lines+markers', line:{color:'#00D2FF', width:3}, marker:{size:7} };
-  const layout = { paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', margin:{t:20,l:48,r:20,b:40} };
-  Plotly.react(mountId, [trace], layout, {responsive:true,displayModeBar:false});
+  const trace = { x, y, type: 'scatter', mode: 'lines+markers', line: { color: '#00D2FF', width: 3 }, marker: { size: 7 } };
+  const layout = { paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { t: 20, l: 48, r: 20, b: 40 } };
+  Plotly.react(mountId, [trace], layout, { responsive: true, displayModeBar: false });
 }
 
-function renderProductPie(dfLocal, mountId='productPie', targetCol){
+function renderProductPie(dfLocal, mountId = 'productPie', targetCol) {
   if (!window.Plotly) return;
   if (!dfLocal || !dfLocal.length) return;
 
-  const col = ('Product type' in dfLocal[0]) 
-                ? 'Product type' 
-                : Object.keys(dfLocal[0]).find(k=>/product/i.test(k));
+  const col = ('Product type' in dfLocal[0])
+    ? 'Product type'
+    : Object.keys(dfLocal[0]).find(k => /product/i.test(k));
 
   if (!col) return;
 
   const sums = {};
-  dfLocal.forEach(r=>{
+  dfLocal.forEach(r => {
     const k = r[col] ?? 'Missing';
     const v = toNum(r[targetCol]);
-    if (!isNaN(v)) sums[k] = (sums[k]||0) + v;
+    if (!isNaN(v)) sums[k] = (sums[k] || 0) + v;
   });
 
   const data = [{
@@ -178,27 +178,27 @@ function renderProductPie(dfLocal, mountId='productPie', targetCol){
     margin: { t: 10, b: 10, l: 10, r: 10 },
   };
 
-  Plotly.react(mountId, data, layout, {responsive:true, displayModeBar:false});
+  Plotly.react(mountId, data, layout, { responsive: true, displayModeBar: false });
 }
 
-function renderSeasonBar(dfLocal, mountId='seasonBar', targetCol){
+function renderSeasonBar(dfLocal, mountId = 'seasonBar', targetCol) {
   if (!window.Plotly) return;
   if (!dfLocal || !dfLocal.length) return;
 
-  const candidates = ["Season","Seasonal_Factor","season"];
-  const col = candidates.find(c => c in dfLocal[0]) || Object.keys(dfLocal[0]).find(k=>/season/i.test(k));
+  const candidates = ["Season", "Seasonal_Factor", "season"];
+  const col = candidates.find(c => c in dfLocal[0]) || Object.keys(dfLocal[0]).find(k => /season/i.test(k));
 
   if (!col) return;
 
   const sums = {};
-  dfLocal.forEach(r=>{
+  dfLocal.forEach(r => {
     const k = r[col] ?? "Missing";
     const v = toNum(r[targetCol]);
-    if (!isNaN(v)) sums[k]=(sums[k]||0)+v;
+    if (!isNaN(v)) sums[k] = (sums[k] || 0) + v;
   });
 
   const x = Object.keys(sums);
-  const y = x.map(k=>sums[k]);
+  const y = x.map(k => sums[k]);
 
   const data = [{
     x, y,
@@ -213,18 +213,18 @@ function renderSeasonBar(dfLocal, mountId='seasonBar', targetCol){
     margin: { t: 30, b: 60, l: 50, r: 10 }
   };
 
-  Plotly.react(mountId, data, layout, {responsive:true, displayModeBar:false});
+  Plotly.react(mountId, data, layout, { responsive: true, displayModeBar: false });
 }
 
 /* ---------- Correlation -> PowerBI-style insight cards ---------- */
 
-function computeTopCorrelations(dfLocal, numericCols, targetCol){
-  function corr(x,y){
+function computeTopCorrelations(dfLocal, numericCols, targetCol) {
+  function corr(x, y) {
     const n = x.length; if (n < 2) return 0;
     const xm = avg(x), ym = avg(y);
     let num = 0, dx = 0, dy = 0;
-    for (let i = 0; i < n; i++){ const a = x[i] - xm, b = y[i] - ym; num += a*b; dx += a*a; dy += b*b; }
-    return num / Math.sqrt((dx*dy) || 1);
+    for (let i = 0; i < n; i++) { const a = x[i] - xm, b = y[i] - ym; num += a * b; dx += a * a; dy += b * b; }
+    return num / Math.sqrt((dx * dy) || 1);
   }
 
   const results = [];
@@ -233,30 +233,30 @@ function computeTopCorrelations(dfLocal, numericCols, targetCol){
   numericCols.forEach(col => {
     if (col === targetCol) return;
     const vcol = dfLocal.map(r => toNum(r[col]));
-    const paired = vcol.map((v,i)=>({x:v,y:targetVec[i]})).filter(p => !isNaN(p.x) && !isNaN(p.y));
+    const paired = vcol.map((v, i) => ({ x: v, y: targetVec[i] })).filter(p => !isNaN(p.x) && !isNaN(p.y));
     if (paired.length < 5) return; // require minimal rows
-    const xs = paired.map(p=>p.x), ys = paired.map(p=>p.y);
+    const xs = paired.map(p => p.x), ys = paired.map(p => p.y);
     results.push({ col, corr: corr(xs, ys) });
   });
 
-  results.sort((a,b) => Math.abs(b.corr) - Math.abs(a.corr));
+  results.sort((a, b) => Math.abs(b.corr) - Math.abs(a.corr));
   return results;
 }
 
-function shortLabel(k){
-  return k.replace(/_/g,' ').replace(/\b([a-z])/g, s => s.toUpperCase());
+function shortLabel(k) {
+  return k.replace(/_/g, ' ').replace(/\b([a-z])/g, s => s.toUpperCase());
 }
 
 /* small helper to pick style class & icon based on correlation */
-function styleForCorr(c){
+function styleForCorr(c) {
   const absC = Math.abs(c);
   if (absC >= 0.5) return { cls: 'card-positive', iconCls: 'icon-positive', tone: 'positive', emoji: '📈' };
-  if (absC >= 0.3) return { cls: 'card-neutral',  iconCls: 'icon-neutral',  tone: 'neutral',  emoji: '⚖️'  };
+  if (absC >= 0.3) return { cls: 'card-neutral', iconCls: 'icon-neutral', tone: 'neutral', emoji: '⚖️' };
   return { cls: 'card-negative', iconCls: 'icon-negative', tone: 'negative', emoji: '⚠️' };
 }
 
 /* Generate a single card element HTML */
-function buildInsightCardHTML(col, corr){
+function buildInsightCardHTML(col, corr) {
   const s = styleForCorr(corr);
   const dir = corr > 0 ? 'positively' : 'negatively';
   const strength = Math.abs(corr);
@@ -305,7 +305,7 @@ function renderDemoChart(dfLocal, targetCol) {
   if (!(col in dfLocal[0])) return;
 
   const sums = {};
-  dfLocal.forEach(r=>{
+  dfLocal.forEach(r => {
     const k = r[col] ?? "Unknown";
     const v = toNum(r[targetCol]);
     if (!isNaN(v)) sums[k] = (sums[k] || 0) + v;
@@ -325,10 +325,10 @@ function renderDemoChart(dfLocal, targetCol) {
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
     margin: { t: 30, b: 60, l: 50, r: 10 },
-    yaxis: { automargin:true }
+    yaxis: { automargin: true }
   };
 
-  Plotly.react("demoBar", data, layout, {responsive: true, displayModeBar: false});
+  Plotly.react("demoBar", data, layout, { responsive: true, displayModeBar: false });
 }
 
 
@@ -375,14 +375,14 @@ function renderRevCost(dfLocal, targetCol) {
     }
   };
 
-  Plotly.react("revCost", data, layout, {responsive: true, displayModeBar: false});
+  Plotly.react("revCost", data, layout, { responsive: true, displayModeBar: false });
 }
 
 
 
 
 /* Render into DOM (replaces previous function) */
-function renderCorrelationInsights(dfLocal, numericCols, targetCol){
+function renderCorrelationInsights(dfLocal, numericCols, targetCol) {
   const grid = document.getElementById('insightGrid');
   const rec = document.getElementById('insightRecommendations');
   if (!grid || !rec) return;
@@ -398,18 +398,18 @@ function renderCorrelationInsights(dfLocal, numericCols, targetCol){
 
 
 /* ---------------- INIT on DOM ready ---------------- */
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function () {
   // If analytics page, df/numericCols should be provided by template
   try {
     if (typeof df !== 'undefined' && df && df.length && typeof target !== 'undefined') {
       renderKPIsToDOM(df, target);
       if (window.Plotly) {
-        try { renderTrendChart(df, target); } catch(e){}
-        try { renderProductPie(df, 'productPie', target); } catch(e){}
-        try { renderSeasonBar(df, 'seasonBar', target); } catch(e){}
-        try { renderCorrelationInsights(df, (typeof numericCols !== 'undefined' ? numericCols : []), target); } catch(e){}
-        try { renderDemoChart(df, target); } catch(e){}
-try { renderRevCost(df, target); } catch(e){}
+        try { renderTrendChart(df, target); } catch (e) { }
+        try { renderProductPie(df, 'productPie', target); } catch (e) { }
+        try { renderSeasonBar(df, 'seasonBar', target); } catch (e) { }
+        try { renderCorrelationInsights(df, (typeof numericCols !== 'undefined' ? numericCols : []), target); } catch (e) { }
+        try { renderDemoChart(df, target); } catch (e) { }
+        try { renderRevCost(df, target); } catch (e) { }
 
 
       }
@@ -425,17 +425,17 @@ try { renderRevCost(df, target); } catch(e){}
   // EDA page: auto fill selects if present & attach draw handler
   try {
     if (typeof numericCols !== 'undefined' && document.getElementById('xSelect')) {
-      function fill(sel, arr, includeEmpty=true){
+      function fill(sel, arr, includeEmpty = true) {
         if (!sel) return;
-        let html = includeEmpty?'<option value="">-- Select --</option>':'';
-        arr.forEach(v=> html += `<option value="${v}">${v}</option>`);
+        let html = includeEmpty ? '<option value="">-- Select --</option>' : '';
+        arr.forEach(v => html += `<option value="${v}">${v}</option>`);
         sel.innerHTML = html;
       }
-      fill(document.getElementById('xSelect'), numericCols.concat(typeof categoricalCols!=='undefined'?categoricalCols:[]));
+      fill(document.getElementById('xSelect'), numericCols.concat(typeof categoricalCols !== 'undefined' ? categoricalCols : []));
       fill(document.getElementById('ySelect'), numericCols, false);
       fill(document.getElementById('zSelect'), numericCols, false);
-      if (document.getElementById('colorSelect')) fill(document.getElementById('colorSelect'), numericCols.concat(typeof categoricalCols!=='undefined'?categoricalCols:[]));
-      if (document.getElementById('groupSelect')) fill(document.getElementById('groupSelect'), typeof categoricalCols!=='undefined'?categoricalCols:[]);
+      if (document.getElementById('colorSelect')) fill(document.getElementById('colorSelect'), numericCols.concat(typeof categoricalCols !== 'undefined' ? categoricalCols : []));
+      if (document.getElementById('groupSelect')) fill(document.getElementById('groupSelect'), typeof categoricalCols !== 'undefined' ? categoricalCols : []);
     }
     // // EDA draw button behaviour (lightweight)
     // const chartType = document.getElementById('chartType');
@@ -502,5 +502,5 @@ try { renderRevCost(df, target); } catch(e){}
     //     });
     //   }
     // }
-  } catch (e) {}
+  } catch (e) { }
 });
