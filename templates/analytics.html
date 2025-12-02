@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Analytics — AI Revenue Dashboard</title>
+
+  <!-- Fonts & Bootstrap -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body class="dark-mode">
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <aside class="sidebar">
+     <div class="logo glass-logo">
+    <h2 class="logo-text">Insight</h2>
+</div>
+
+    <nav>
+      <ul class="menu">
+        <li class="active"><a href="/">Prediction Form</a></li>
+        <li><a href="/analytics">Analytics</a></li>
+        <li><a href="/eda">Charts</a></li>
+      </ul>
+    </nav>
+    <div class="toggle-theme">
+      <label class="switch">
+        <input id="themeToggle" type="checkbox" />
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">Dark Mode</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="page-header">
+      <h1 class="neon-heading">Analytics — Key Business Insights</h1>
+      <div class="underline"></div>
+      <p class="small-muted">High-level KPIs, trends and actionable insights computed from your dataset.</p>
+    </header>
+
+    <!-- KPIs (rendered by script.js) -->
+    <div id="kpiRow" class="kpi-row"></div>
+
+    <!-- Dashboard grid -->
+    <div class="dashboard-grid">
+      <div>
+        <div class="chart-card glass">
+          <h5>Revenue Trend</h5>
+          <div id="trendChart" class="chart-inner"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:18px;">
+          <div class="chart-card glass">
+            <h6>Revenue by Product Type</h6>
+            <div id="productPie" class="chart-inner" style="height:220px"></div>
+          </div>
+          <div class="chart-card glass">
+            <h6>Revenue by Season</h6>
+            <div id="seasonBar" class="chart-inner" style="height:220px"></div>
+          </div>
+           <!-- Customer Demographics -->
+    <div class="chart-card glass">
+        <h6>Revenue by Customer Demographics</h6>
+        <div id="demoBar" class="chart-inner" style="height:220px;"></div>
+    </div>
+
+    <!-- Cost vs Revenue -->
+    <div class="chart-card glass">
+        <h6>Revenue vs Costs</h6>
+        <div id="revCost" class="chart-inner" style="height:220px;"></div>
+    </div>
+             <!-- Recommendations -->
+    <div style="margin-top:18px;">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:22px;">
+
+   
+
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:22px;">
+
+  
+
+    <!-- Lead Time Impact -->
+   
+
+</div>
+
+      <div id="insightRecommendations" class="quick-insight small-muted"></div>
+    </div>
+        </div>
+      </div>
+
+     <aside class="insight-card glass" style="padding:18px;">
+
+  <h5 style="margin-top:0;">Top Insights (Actionable)</h5>
+
+  <!-- grid of PowerBI-like insight cards -->
+  <div id="insightCards" class="insight-panel"> 
+
+    <!-- Insight Cards (auto-filled by JS) -->
+    <div id="insightGrid" class="insight-cards"></div>
+
+ 
+
+  </div>
+</aside>
+
+    </div>
+  </main>
+
+  <!-- Pass data from Flask; ensure endpoint sends df_json, numeric_cols, categorical_cols, target -->
+  <script>
+    const df = {{ df_json | tojson | safe }};
+    const numericCols = {{ numeric_cols | tojson | safe }};
+    const categoricalCols = {{ categorical_cols | tojson | safe }};
+    const target = "{{ target if target is defined else 'Correct_Revenue' }}";
+  </script>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

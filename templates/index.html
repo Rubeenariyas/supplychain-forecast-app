@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AI Revenue Dashboard — Prediction</title>
+
+  <!-- Fonts & Bootstrap -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body class="dark-mode">
+
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+  <div class="logo glass-logo">
+    <h2 class="logo-text">Insight</h2>
+</div>
+
+
+    <nav>
+      <ul class="menu">
+        <li class="active"><a href="/">Prediction Form</a></li>
+        <li><a href="/analytics">Analytics</a></li>
+        <li><a href="/eda">Charts</a></li>
+      </ul>
+    </nav>
+
+    <div class="toggle-theme">
+      <label class="switch">
+        <input id="themeToggle" type="checkbox" />
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">Dark Mode</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <header class="page-header">
+      <h1 class="neon-heading">Supply Chain Revenue Prediction</h1>
+      <div class="underline"></div>
+    </header>
+
+    <!-- KPI row -->
+    <section class="kpi-row">
+      <div class="kpi glass">
+        <h4>Total Features</h4>
+        <div class="kpi-value">{{ df.columns|length - 1 }}</div>
+      </div>
+      <div class="kpi glass">
+        <h4>Model</h4>
+        <div class="kpi-value">Random Forest</div>
+      </div>
+      <div class="kpi glass">
+        <h4>Status</h4>
+        <div class="kpi-value">Ready</div>
+      </div>
+    </section>
+
+    <!-- FORM card -->
+    <section class="glass-card glass form-wrapper">
+      <form method="POST" class="form-grid-4" novalidate>
+        {% for col in df.columns %}
+          {% if col != "Correct_Revenue" %}
+            <div class="input-field">
+              <label>{{ col }}</label>
+              {% if col in cat_cols %}
+                <select name="{{ col }}" class="glass-input" required>
+                  {% for val in df[col].unique() %}
+                    <option value="{{ val }}">{{ val }}</option>
+                  {% endfor %}
+                </select>
+              {% elif col in num_cols %}
+                <input name="{{ col }}" type="number" step="0.01" class="glass-input" required>
+              {% else %}
+                <input name="{{ col }}" type="text" class="glass-input" required>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <div class="full-width text-center" style="grid-column: 1 / -1; margin-top:16px;">
+          <button class="glass-btn primary" type="submit">Predict Revenue</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Prediction result -->
+{% if pred %}
+<section class="prediction-banner glass">
+    <h3>Predicted Revenue</h3>
+    <div class="pred-value">₹ {{ pred }}</div>
+</section>
+{% endif %}
+
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

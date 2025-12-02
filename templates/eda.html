@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Interactive EDA — Full</title>
+
+  <!-- Fonts & Bootstrap -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+
+<body class="dark-mode">
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <aside class="sidebar">
+    <div class="logo glass-logo">
+    <h2 class="logo-text">Insight</h2>
+</div>
+
+    <nav>
+      <ul class="menu">
+        <li class="active"><a href="/">Prediction Form</a></li>
+        <li><a href="/analytics">Analytics</a></li>
+        <li><a href="/eda">Charts</a></li>
+      </ul>
+    </nav>
+    <div class="toggle-theme">
+      <label class="switch">
+        <input id="themeToggle" type="checkbox" />
+        <span class="slider"></span>
+      </label>
+      <span class="toggle-label">Dark Mode</span>
+    </div>
+  </aside>
+
+
+
+  <div class="main wrapper">
+    <div class="particles"></div>
+    <div class="ai-waves"></div>
+
+    <h1 class="neon-heading">Interactive EDA </h1>
+    <p class="small-muted">Pick a chart type and then pick features. Context controls will appear automatically.</p>
+
+    <!-- Controls -->
+    <div class="controls mt-3">
+
+      <div class="form-group">
+        <label>Chart Type</label>
+        <select id="chartType" class="form-control glass-input">
+          <option value="">-- Select Chart --</option>
+          <option value="hist">Histogram</option>
+          <option value="box">Boxplot</option>
+          <option value="scatter2d">Scatter 2D</option>
+          <option value="scatter3d">Scatter 3D</option>
+          <option value="pie">Pie / Donut</option>
+          <option value="bar">Bar (agg)</option>
+          <option value="heatmap">Correlation Heatmap</option>
+        </select>
+      </div>
+
+      <div class="form-group hidden" id="xDiv">
+        <label>X (numeric / category)</label>
+        <select id="xSelect" class="form-control glass-input"></select>
+      </div>
+
+      <div class="form-group hidden" id="yDiv">
+        <label>Y (numeric)</label>
+        <select id="ySelect" class="form-control glass-input"></select>
+      </div>
+
+      <div class="form-group hidden" id="zDiv">
+        <label>Z (numeric - 3D)</label>
+        <select id="zSelect" class="form-control glass-input"></select>
+      </div>
+
+      <div class="form-group hidden" id="colorDiv">
+        <label>Color (optional)</label>
+        <select id="colorSelect" class="form-control glass-input"></select>
+      </div>
+
+      <div class="form-group hidden" id="sizeDiv">
+        <label>Size (optional)</label>
+        <select id="sizeSelect" class="form-control glass-input"></select>
+      </div>
+
+      <div class="form-group hidden" id="aggDiv">
+        <label>Aggregation</label>
+        <select id="aggSelect" class="form-control glass-input">
+          <option value="count">Count</option>
+          <option value="mean">Mean (target)</option>
+          <option value="sum">Sum (target)</option>
+        </select>
+      </div>
+
+      <div class="form-group hidden" id="groupDiv">
+        <label>Group by (categorical)</label>
+        <select id="groupSelect" class="form-control glass-input"></select>
+      </div>
+
+      <div class="form-group hidden" id="trendDiv">
+        <label class="d-block">Trendline</label>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="trendlineToggle">
+          <label class="form-check-label small-muted" for="trendlineToggle">Show linear regression</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <button id="drawBtn" class="glass-btn primary">Draw Chart</button>
+      </div>
+    </div>
+
+    <!-- Chart card -->
+    <div class="chart-card mt-3">
+      <div id="chartStatus" class="small-muted">No chart drawn yet.</div>
+      <div class="heatmap-container">
+            <div id="chartArea"></div>
+</div>
+
+    </div>
+
+  </div>
+
+
+
+
+  <script>
+/* ================== Data from Flask (safe injection) ================== */
+/* Make sure your /eda route passes df_json, numeric_cols, categorical_cols */
+ const df = {{ df_json | tojson | safe }};
+    const numericCols = {{ numeric_cols | tojson | safe }};
+    const categoricalCols = {{ categorical_cols | tojson | safe }};
+    const target = "{{ target if target is defined else 'Correct_Revenue' }}";
+
+/* Small helpers */
+const $ = id => document.getElementById(id);
+function avg(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function toNum(v){ return (v===null||v===undefined||v===""||isNaN(Number(v))) ? NaN : Number(v); }
+
+/* ---------- Fill selects ---------- */
+function fillSelect(sel, arr, includeEmpty=true){
+  let html = includeEmpty ? '<option value="">--Select--</option>' : '';
+  arr.forEach(x=> html += `<option value="${x}">${x}</option>`);
+  sel.innerHTML = html;
+}
+
+/* Populate initial selects */
+fillSelect($('xSelect'), numericCols.concat(categoricalCols));  // x can be numeric or categorical for some charts
+fillSelect($('ySelect'), numericCols, false);
+fillSelect($('zSelect'), numericCols, false);
+fillSelect($('colorSelect'), numericCols.concat(categoricalCols));
+fillSelect($('sizeSelect'), numericCols);
+fillSelect($('groupSelect'), categoricalCols);
+
+/* ---------- Layout (consistent) ---------- */
+function defaultLayout(title){
+  return {
+    title:{ text: title, font:{size:20, color:'#9b5cff'}, x:0.5 },
+    margin: {l:60,r:40,t:70,b:60},
+    paper_bgcolor:'rgba(0,0,0,0)',
+    plot_bgcolor:'rgba(0,0,0,0)',
+    font:{color:'#9b5cff'},
+    legend: { orientation: 'h', x: 0.5, xanchor: 'center' }
+  };
+}
+
+/* ---------- Utility: compute aggregated values ---------- */
+function groupAggregate(rows, by, agg, valueCol){
+  const map = {};
+  rows.forEach(r=>{
+    const key = (r[by] === null || r[by] === undefined) ? 'Missing' : String(r[by]);
+    const val = toNum(r[valueCol]);
+    if(!map[key]) map[key] = {sum:0, cnt:0};
+    map[key].sum += isNaN(val)?0:val;
+    map[key].cnt += 1;
+  });
+  const labels = Object.keys(map);
+  if(agg === 'count') return {x:labels, y: labels.map(l=> map[l].cnt)};
+  if(agg === 'mean') return {x:labels, y: labels.map(l=> map[l].sum / map[l].cnt)};
+  if(agg === 'sum') return {x:labels, y: labels.map(l=> map[l].sum)};
+  return {x:labels, y: labels.map(l=> map[l].cnt)};
+}
+
+/* ---------- Correlation helper ---------- */
+function corr(x,y){
+  const n = x.length;
+  const xm = avg(x), ym = avg(y);
+  let num=0, dx=0, dy=0;
+  for(let i=0;i<n;i++){ const a=x[i]-xm, b=y[i]-ym; num+=a*b; dx+=a*a; dy+=b*b; }
+  return num/Math.sqrt(dx*dy || 1);
+}
+
+/* ---------- Regression helper (linear) ---------- */
+function linreg(x,y){
+  const n=x.length;
+  const xm=avg(x), ym=avg(y);
+  let num=0, den=0;
+  for(let i=0;i<n;i++){ num += (x[i]-xm)*(y[i]-ym); den += (x[i]-xm)*(x[i]-xm); }
+  const m = den === 0 ? 0 : num/den;
+  const b = ym - m*xm;
+  // r^2
+  const rss = x.map((xi,i)=> (y[i] - (m*xi + b))**2).reduce((a,b)=>a+b,0);
+  const tss = y.map(yi=> (yi-ym)**2).reduce((a,b)=>a+b,0);
+  const r2 = 1 - (rss / (tss || 1));
+  return {m,b,r2};
+}
+
+/* ---------- Chart renderers ---------- */
+function drawHistogram(xCol, groupBy=null){
+  const vals = df.map(r=> toNum(r[xCol])).filter(v=> !isNaN(v));
+  const data = [{ x: vals, type:'histogram', marker:{color:'#1BC7D8'}, opacity:0.1 }];
+  Plotly.newPlot('chartArea', data, defaultLayout(`Histogram — ${xCol}`), {responsive:true});
+}
+
+function drawBoxplot(xCol, groupBy=null){
+  if(groupBy){
+    const groups = {};
+    df.forEach(r=>{
+      const g = (r[groupBy]===undefined||r[groupBy]===null)?'Missing':String(r[groupBy]);
+      groups[g] = groups[g]||[];
+      const v = toNum(r[xCol]); if(!isNaN(v)) groups[g].push(v);
+    });
+    const traces = Object.keys(groups).map(k=> ({ y: groups[k], name:k, type:'box' }) );
+    Plotly.newPlot('chartArea', traces, defaultLayout(`Boxplot — ${xCol} by ${groupBy}`), {responsive:true});
+    return;
+  }
+  const vals = df.map(r=> toNum(r[xCol])).filter(v=> !isNaN(v));
+  Plotly.newPlot('chartArea', [{ y: vals, type:'box', marker:{color:'#9D4CFF'} }], defaultLayout(`Boxplot — ${xCol}`), {responsive:true});
+}
+
+function drawPie(catCol){
+  const counts = {};
+  df.forEach(r => { const k = r[catCol]===undefined||r[catCol]===null ? 'Missing' : String(r[catCol]); counts[k] = (counts[k]||0)+1; });
+  Plotly.newPlot('chartArea', [{
+    labels: Object.keys(counts),
+    values: Object.values(counts),
+    type:'pie',
+    hole:0.35,
+    textinfo:'label+percent'
+  }], defaultLayout(`Pie — ${catCol}`), {responsive:true});
+}
+
+function drawBar(catCol, agg, valueCol){
+  if(agg === 'count'){
+    const cnt = groupAggregate(df, catCol, 'count', valueCol);
+    Plotly.newPlot('chartArea', [{ x:cnt.x, y:cnt.y, type:'bar', marker:{color:'#00FFA2'} }], defaultLayout(`Count by ${catCol}`), {responsive:true});
+  } else {
+    const aggRes = groupAggregate(df, catCol, agg, valueCol);
+    Plotly.newPlot('chartArea', [{ x:aggRes.x, y:aggRes.y, type:'bar', marker:{color:'#7A3CF3'} }], defaultLayout(`${agg} of ${valueCol} by ${catCol}`), {responsive:true});
+  }
+}
+
+function drawScatter2D(xCol,yCol,colorCol=null,sizeCol=null, showTrend=false){
+  const x = df.map(r => toNum(r[xCol]));
+  const y = df.map(r => toNum(r[yCol]));
+  let marker = { color:'#FF66CC', size:7, opacity:0.8 };
+  if(colorCol){
+    const colors = df.map(r => (r[colorCol]===undefined||r[colorCol]===null) ? 'Missing' : String(r[colorCol]));
+    marker = { color: colors, size:7, opacity:0.9, showscale:false };
+  }
+  if(sizeCol){
+    const sizes = df.map(r => Math.max(4, Math.min(18, Math.abs(toNum(r[sizeCol])) || 6)));
+    marker.size = sizes;
+  }
+  const trace = { x, y, mode:'markers', type:'scatter', marker };
+  const data = [trace];
+
+  // trendline
+  if(showTrend){
+    const xNum = x.filter(v=>!isNaN(v)); // ensure numeric arrays same indexes? use only rows where both numeric
+    const pairs = df.map(r=> ({x:toNum(r[xCol]), y:toNum(r[yCol])})).filter(p=> !isNaN(p.x) && !isNaN(p.y));
+    if(pairs.length >= 2){
+      const xs = pairs.map(p=>p.x), ys = pairs.map(p=>p.y);
+      const reg = linreg(xs, ys);
+      // line endpoints
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const y1 = reg.m * minX + reg.b, y2 = reg.m * maxX + reg.b;
+      data.push({ x:[minX, maxX], y:[y1,y2], mode:'lines', name:`Trend (R²=${reg.r2.toFixed(3)})`, line:{color:'#00FFA2', width:3} });
+    }
+  }
+
+  Plotly.newPlot('chartArea', data, defaultLayout(`${yCol} vs ${xCol}`), {responsive:true});
+}
+
+function drawScatter3D(xCol,yCol,zCol,colorCol=null){
+  const x = df.map(r=> toNum(r[xCol]));
+  const y = df.map(r=> toNum(r[yCol]));
+  const z = df.map(r=> toNum(r[zCol]));
+  const marker = { color: (colorCol ? df.map(r=> r[colorCol]) : '#FF66CC'), size:5, opacity:0.9 };
+  const trace = { x, y, z, mode:'markers', type:'scatter3d', marker };
+  Plotly.newPlot('chartArea', [trace], defaultLayout(`3D: ${xCol} / ${yCol} / ${zCol}`), {responsive:true});
+}
+
+// heatmap
+
+function drawHeatmap() {
+    const cols = numericCols;
+
+    // Build correlation matrix
+    const matrix = cols.map(c1 =>
+        cols.map(c2 => {
+            const points = df.map(r => ({
+                x: toNum(r[c1]),
+                y: toNum(r[c2])
+            })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+
+            if (points.length < 2) return 0;
+
+            const x = points.map(p => p.x);
+            const y = points.map(p => p.y);
+            return corr(x, y);
+        })
+    );
+
+    const textVals = matrix.map(r => r.map(v => v.toFixed(2)));
+
+    const data = [{
+        z: matrix,
+        x: cols,
+        y: cols,
+        type: "heatmap",
+        colorscale: "RdBu",
+        reversescale: true,
+        zmin: -1,
+        zmax: 1,
+        text: textVals,
+        texttemplate: "%{text}",
+        textfont: { size: 11, color: "#000" },
+        hovertemplate: "<b>%{y}</b> vs <b>%{x}</b><br>Corr: %{z:.2f}<extra></extra>",
+        showscale: true
+    }];
+
+    const layout = {
+        title: {
+            text: "Correlation Heatmap",
+            x: 0.5,
+            font: { size: 28, color: "white" }
+        },
+        xaxis: {
+            tickangle: -45,
+            tickfont: { size: 13, color: "white" },
+            automargin: true
+        },
+        yaxis: {
+            tickfont: { size: 13, color: "white" },
+            automargin: true
+        },
+
+        // ⭐ FIX alignment completely
+        margin: {
+            l: 200,
+            r: 80,
+            t: 100,
+            b: 200
+        },
+
+        // ⭐ exact height & width so plot fills space correctly
+        height: 900,
+        width: null,
+
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)"
+    };
+
+    Plotly.newPlot("chartArea", data, layout, {
+        responsive: true,
+        displayModeBar: false
+    });
+}
+
+
+/* ---------- UI logic: show/hide controls based on chart ---------- */
+function resetControls(){
+  ['xDiv','yDiv','zDiv','colorDiv','sizeDiv','aggDiv','groupDiv','trendDiv'].forEach(id=> $(id).classList.add('hidden'));
+}
+function showControlsFor(chart){
+  resetControls();
+  if(chart === 'hist'){ $('xDiv').classList.remove('hidden'); $('groupDiv').classList.remove('hidden'); }
+  if(chart === 'box'){ $('xDiv').classList.remove('hidden'); $('groupDiv').classList.remove('hidden'); }
+  if(chart === 'pie'){ $('xDiv').classList.remove('hidden'); } // x is categorical here
+  if(chart === 'bar'){ $('xDiv').classList.remove('hidden'); $('aggDiv').classList.remove('hidden'); $('yDiv').classList.add('hidden'); $('groupDiv').classList.remove('hidden'); }
+  if(chart === 'scatter2d'){ $('xDiv').classList.remove('hidden'); $('yDiv').classList.remove('hidden'); $('colorDiv').classList.remove('hidden'); $('sizeDiv').classList.remove('hidden'); $('trendDiv').classList.remove('hidden'); }
+  if(chart === 'scatter3d'){ $('xDiv').classList.remove('hidden'); $('yDiv').classList.remove('hidden'); $('zDiv').classList.remove('hidden'); $('colorDiv').classList.remove('hidden'); }
+  if(chart === 'heatmap'){ /* no selects */ }
+}
+
+/* ---------- Event handlers ---------- */
+$('chartType').addEventListener('change', (e)=>{
+  const v = e.target.value;
+  showControlsFor(v);
+  $('chartStatus').innerText = 'Controls updated. Choose features and click "Draw Chart".';
+});
+
+$('drawBtn').addEventListener('click', ()=>{
+  const chart = $('chartType').value;
+  
+  if(!chart){ alert('Select a chart type'); return; }
+  $('chartStatus').innerText = 'Rendering...';
+  // read selected values
+  const x = $('xSelect').value;
+  const y = $('ySelect').value;
+  const z = $('zSelect').value;
+  const color = $('colorSelect').value;
+  const size = $('sizeSelect').value;
+  const agg = $('aggSelect').value;
+  const group = $('groupSelect').value;
+  const trend = $('trendlineToggle').checked;
+
+  try{
+    if(chart === 'hist'){ if(!x){ alert('Select feature'); return; } drawHistogram(x, group); $('chartStatus').innerText = `Histogram: ${x}`; }
+    else if(chart === 'box'){ if(!x){ alert('Select feature'); return; } drawBoxplot(x, group); $('chartStatus').innerText = `Boxplot: ${x}`; }
+    else if(chart === 'pie'){ if(!x){ alert('Select categorical'); return; } drawPie(x); $('chartStatus').innerText = `Pie: ${x}`; }
+    else if(chart === 'bar'){ if(!x){ alert('Select categorical'); return; } drawBar(x, agg, targetCol); $('chartStatus').innerText = `Bar (${agg}): ${x}`; }
+    else if(chart === 'scatter2d'){ if(!x||!y){ alert('Select X and Y'); return; } drawScatter2D(x,y, color||null, size||null, trend); $('chartStatus').innerText = `Scatter 2D: ${y} vs ${x}`; }
+    else if(chart === 'scatter3d'){ if(!x||!y||!z){ alert('Select X, Y, Z'); return; } drawScatter3D(x,y,z,color||null); $('chartStatus').innerText = `Scatter 3D: ${x} / ${y} / ${z}`; }
+    else if(chart === 'heatmap'){ drawHeatmap(); $('chartStatus').innerText = `Correlation Heatmap`; }
+    else { alert('Unknown chart'); }
+  } catch(err){
+    console.error(err);
+    alert('Error rendering chart: ' + err.message);
+    $('chartStatus').innerText = 'Error rendering chart';
+  }
+});
+
+/* initialize hidden state */
+resetControls();
+
+
+</script>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
