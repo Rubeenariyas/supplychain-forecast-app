@@ -990,10 +990,10 @@ select.glass-input {
         left: 12px;
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-        font-size: 10px;
+        color: rgb(118, 126, 165);
+        font-size: 20px;
         padding: 3px 3px;
-        border-radius: 10px;
+        border-radius: 20px;
         backdrop-filter: blur(8px);
         z-index: 1200;
         cursor: pointer;
@@ -1047,4 +1047,91 @@ select.glass-input {
     .chart-inner {
         height: 240px !important;
     }
+}
+/* Neon Pulse Glow */
+.bounce-glow {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00ffa2;
+  text-shadow: 0 0 12px #00ffa2, 0 0 30px #00ffa2;
+  transition: 0.3s ease-in-out;
+  animation: neonPulse 2s infinite ease-in-out;
+}
+
+@keyframes neonPulse {
+  0% { text-shadow: 0 0 8px #00ffa2, 0 0 20px #00ffa2; }
+  50% { text-shadow: 0 0 16px #00ffa2, 0 0 40px #00ffa2; }
+  100% { text-shadow: 0 0 8px #00ffa2, 0 0 20px #00ffa2; }
+}
+
+/* Bounce Animation (triggered when count ends) */
+.animate-complete {
+  animation: bounceFinal 0.6s ease-out;
+}
+
+@keyframes bounceFinal {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  60%  { transform: scale(0.9); }
+  80%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+
+/* Stable Neon Glow - Purple */
+.neon-value {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #9b5cff;
+
+  /* Neon breathing glow */
+  animation: neonPulsePurple 1.8s infinite ease-in-out;
+
+  text-shadow:
+    0 0 10px #9b5cff,
+    0 0 22px #9b5cff,
+    0 0 40px #9b5cff,
+    0 0 60px #9b5cff;
+}
+
+@keyframes neonPulsePurple {
+  0% {
+    text-shadow:
+      0 0 6px #9b5cff,
+      0 0 14px #9b5cff,
+      0 0 25px #9b5cff;
+  }
+  100% {
+    text-shadow:
+      0 0 16px #9b5cff,
+      0 0 30px #9b5cff,
+      0 0 55px #9b5cff;
+  }
+}
+
+/* Burst effect when number finishes */
+.neon-burst {
+  animation: burstPulsePurple 0.6s ease-out;
+}
+
+@keyframes burstPulsePurple {
+  0% {
+    transform: scale(1);
+    text-shadow:
+      0 0 16px #9b5cff,
+      0 0 45px #9b5cff;
+  }
+  50% {
+    transform: scale(1.25);
+    text-shadow:
+      0 0 30px #9b5cff,
+      0 0 75px #9b5cff;
+  }
+  100% {
+    transform: scale(1);
+    text-shadow:
+      0 0 12px #9b5cff,
+      0 0 35px #9b5cff;
+  }
 }

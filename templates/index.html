@@ -32,8 +32,8 @@
     <nav>
       <ul class="menu">
         <li class="active"><a href="/">Prediction Form</a></li>
-        <li><a href="/analytics">Analytics</a></li>
-        <li><a href="/eda">Charts</a></li>
+        <li class="active"><a href="/analytics">Analytics</a></li>
+        <li class="active"><a href="/eda">Charts</a></li>
       </ul>
     </nav>
 
@@ -99,10 +99,11 @@
 
     <!-- Prediction result -->
     {% if pred %}
-    <section class="prediction-banner glass">
-      <h3>Predicted Revenue</h3>
-      <div class="pred-value">₹ {{ pred }}</div>
-    </section>
+ <section class="prediction-banner glass">
+  <h3>Predicted Revenue</h3>
+  <div class="pred-value neon-value" id="predValue" data-value="{{ pred }}">₹ 0</div>
+</section>
+
     {% endif %}
 
   </main>
@@ -126,11 +127,36 @@
     });
   </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-</body>
+    const el = document.getElementById("predValue");
+    if (!el) return;
 
-</html>
+    const finalValue = Number(el.getAttribute("data-value")) || 0;
+    let start = 0;
+    const duration = 1500;
+    const steps = 70;
+    const increment = finalValue / steps;
 
+    const interval = setInterval(() => {
+        start += increment;
+
+        if (start >= finalValue) {
+            el.textContent = "₹ " + finalValue.toLocaleString();
+            clearInterval(interval);
+
+            // ⭐ Neon burst when animation completes
+            el.classList.add("neon-burst");
+            setTimeout(() => el.classList.remove("neon-burst"), 800);
+
+        } else {
+            el.textContent = "₹ " + Math.floor(start).toLocaleString();
+        }
+    }, duration / steps);
+
+});
+</script>
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
