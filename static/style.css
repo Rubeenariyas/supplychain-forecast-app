@@ -7,7 +7,8 @@
 
 html,
 body {
-    height: 1400px;
+     min-height: 100vh;
+    height: auto !important;
     margin: 0;
     font-family: 'Poppins', sans-serif;
     background: #0b0412;
@@ -1134,4 +1135,31 @@ select.glass-input {
       0 0 12px #9b5cff,
       0 0 35px #9b5cff;
   }
+}
+
+
+.main {
+    margin-left: var(--sidebar-w);
+    padding: 32px;
+    width: calc(100% - var(--sidebar-w));
+}
+
+@media(max-width: 900px) {
+    .main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+
+.prediction-banner {
+    position: relative;
+    z-index: 5;
+    margin-bottom: 40px;
+}
+.pred-value {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+.form-grid-4, .kpi-row {
+    width: 100%;
 }

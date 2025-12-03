@@ -69,33 +69,53 @@
       </div>
     </section>
 
-    <!-- FORM card -->
-    <section class="glass-card glass form-wrapper">
-      <form method="POST" class="form-grid-4" novalidate>
-        {% for col in df.columns %}
-        {% if col != "Correct_Revenue" %}
-        <div class="input-field">
-          <label>{{ col }}</label>
-          {% if col in cat_cols %}
-          <select name="{{ col }}" class="glass-input" required>
-            {% for val in df[col].unique() %}
-            <option value="{{ val }}">{{ val }}</option>
-            {% endfor %}
-          </select>
-          {% elif col in num_cols %}
-          <input name="{{ col }}" type="number" step="0.01" class="glass-input" required>
-          {% else %}
-          <input name="{{ col }}" type="text" class="glass-input" required>
-          {% endif %}
-        </div>
-        {% endif %}
-        {% endfor %}
+   <!-- FORM card -->
+<section class="glass-card glass form-wrapper">
+  <form method="POST" class="form-grid-4" novalidate>
 
-        <div class="full-width text-center" style="grid-column: 1 / -1; margin-top:16px;">
-          <button class="glass-btn primary" type="submit">Predict Revenue</button>
-        </div>
-      </form>
-    </section>
+    {% for col in df.columns %}
+    {% if col != "Correct_Revenue" %}
+    <div class="input-field">
+      <label>{{ col }}</label>
+
+      {% if col in cat_cols %}
+      <select name="{{ col }}" class="glass-input" required>
+        {% for val in df[col].unique() %}
+        <option value="{{ val }}"
+          {% if form_values.get(col) ==val %} selected {% endif %}>
+          {{ val }}
+        </option>
+        {% endfor %}
+      </select>
+
+      {% elif col in num_cols %}
+      <input name="{{ col }}" type="number" step="0.01" class="glass-input"
+             required value="{{ form_values.get(col, '') }}">
+
+      {% else %}
+      <input name="{{ col }}" type="text" class="glass-input"
+             required value="{{ form_values.get(col, '') }}">
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <div class="full-width text-center" style="grid-column: 1 / -1; margin-top:16px;">
+    
+      <div class="full-width text-center" style="grid-column: 1 / -1; margin-top:16px; display:flex; gap:15px; justify-content:center;">
+
+    <!-- Predict Button -->
+    <button class="glass-btn primary" type="submit">Predict Revenue</button>
+
+    <!-- Clear Button -->
+    <button class="glass-btn primary" type="button" id="clearFormBtn">Clear</button>
+
+</div>
+
+    </div>
+  </form>
+</section>
+
 
     <!-- Prediction result -->
     {% if pred %}
@@ -108,6 +128,26 @@
 
   </main>
 
+<script>
+document.getElementById("clearFormBtn")?.addEventListener("click", () => {
+    const inputs = document.querySelectorAll(".form-grid-4 input, .form-grid-4 select");
+
+    inputs.forEach(el => {
+        if (el.tagName === "SELECT") {
+            el.selectedIndex = 0;   // reset dropdown to first item
+        } else {
+            el.value = "";          // clear text/number inputs
+        }
+    });
+
+    // Remove prediction section if visible
+    const pred = document.querySelector(".prediction-banner");
+    if (pred) pred.remove();
+
+    // Optional: scroll back to top of form
+    document.querySelector(".form-wrapper").scrollIntoView({ behavior: "smooth" });
+});
+</script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -126,6 +166,19 @@
       });
     });
   </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const pred = document.querySelector(".prediction-banner");
+    if (pred) {
+        setTimeout(() => {
+            pred.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 300);
+    }
+});
+</script>
+
+
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

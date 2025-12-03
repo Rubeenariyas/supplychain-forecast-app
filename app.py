@@ -53,11 +53,11 @@ def preprocess_input(input_dict):
 
     return df_manual
 
-
 # ---------------- HOME PAGE (Prediction Form) ----------------
 @app.route("/", methods=["GET", "POST"])
 def home():
     prediction = None
+    form_values = {}   # <-- store user inputs
 
     if request.method == "POST":
         input_data = {}
@@ -67,11 +67,12 @@ def home():
                 continue
 
             value = request.form.get(col)
+            form_values[col] = value   # <-- STORE IT HERE
 
             # ---------------- FIX: SAFE NUMERIC CONVERSION ---------------
             if col in rf_num_cols:
                 if value is None or value.strip() == "":
-                    value = 0     # default safe value
+                    value = 0
                 else:
                     try:
                         value = float(value)
@@ -82,12 +83,12 @@ def home():
             input_data[col] = value
 
         processed = preprocess_input(input_data)
-        prediction = float(rf_model.predict(processed)[0])
-        prediction = round(prediction, 2)
+        prediction = round(float(rf_model.predict(processed)[0]), 2)
 
     return render_template("index.html",
                            pred=prediction,
                            df=df,
+                           form_values=form_values,   # <-- RETURN TO HTML
                            cat_cols=cat_cols,
                            num_cols=rf_num_cols)
 
