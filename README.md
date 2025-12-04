@@ -77,7 +77,7 @@ Jupyter Notebook
 │
 ├── app.py                  # Flask Application
 ├── model.pkl               # Trained Model
-├── scaler.pkl              # Scaler for preprocessing
+├── scaler.pkl             # Scaler for preprocessing
 ├── supplychain.ipynb       # Jupyter ML notebook
 ├── requirements.txt        # Dependencies
 └── README.md               # Project Documentation
